@@ -1,4 +1,6 @@
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Order.API.Models.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +13,9 @@ builder.Services.AddMassTransit(cfg =>
     cfg.UsingRabbitMq((context,_configure)=>{
         _configure.Host(builder.Configuration["RabbitMQ_URL"]);
     });
+});
+builder.Services.AddDbContext<OrderAPIDBContext>(opt =>{
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQLConnectionString"));
 });
 
 
