@@ -3,7 +3,7 @@ using Microsoft.OpenApi.Services;
 
 namespace Stock.API.Models.Contexts;
 
-partial class StockAPIDBContext : DbContext
+public class StockAPIDBContext : DbContext
 {
     public DbSet<Stock> Stocks { get; set; }
     public StockAPIDBContext(DbContextOptions options) : base(options)
