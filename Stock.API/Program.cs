@@ -14,11 +14,14 @@ builder.Services.AddDbContext<StockAPIDBContext>(opt =>
 });
 builder.Services.AddMassTransit(cfg => 
 {
+    cfg.AddConsumer<PaymentFailedEventConsumer>();
     cfg.AddConsumer<OrderCreatedEventConsumer>();
     cfg.UsingRabbitMq((context,_configure)=>{
         _configure.Host(builder.Configuration["RabbitMQ_URL"]);
 
         _configure.ReceiveEndpoint(RebbitMQSettings.Stock_OrderCreatedEventQueue,e => e.ConfigureConsumer<OrderCreatedEventConsumer>(context));
+        _configure.ReceiveEndpoint(RebbitMQSettings.Stock_PaymentFailedEventQueue,e => e.ConfigureConsumer<PaymentFailedEventConsumer>(context));
+
     });
 });
 var app = builder.Build();
