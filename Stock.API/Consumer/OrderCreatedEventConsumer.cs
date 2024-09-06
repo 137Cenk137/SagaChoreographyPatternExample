@@ -2,11 +2,12 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Shared.Events;
+using Stock.API.Migrations;
 using Stock.API.Models.Contexts;
 
 namespace Stock.API.Consumer;
 
-public class OrderCreatedEventConsumer(StockAPIDBContext _dbcontext) : IConsumer<OrderCreatedEvent>
+public class OrderCreatedEventConsumer(StockAPIDBContext _dbcontext,IPublishEndpoint _publishEndpoint,ISendEndpointProvider _sendEndpointProvider) : IConsumer<OrderCreatedEvent>
 {
 
     public async Task Consume(ConsumeContext<OrderCreatedEvent> context)
@@ -29,9 +30,24 @@ public class OrderCreatedEventConsumer(StockAPIDBContext _dbcontext) : IConsumer
             }
             await _dbcontext.SaveChangesAsync();
             //payment i firlatilacak event
+            StockReservedEvent stockReservedEvent = new(){
+                BuyerId = context.Message.BuyerId,
+                OrderId = context.Message.OrderId,
+                TotalPrice = context.Message.TotalPrice,
+                orderItemMessages = context.Message.OrderItemMessages
+            };
+            await _publishEndpoint.Publish(stockReservedEvent);
         }
         else 
         {
+            StockNotReseredEvent stockNotReseredEvent = new()
+            {
+                BuyerId = context.Message.BuyerId,
+                OrderId = context.Message.OrderId,
+                Messages = "There is no enough product  in stock "
+            };
+            await _sendEndpointProvider.GetSendEndpoint(new Uri($"queue:{Shared.RebbitMQSettings.Order_StockNotReservedEventQueue}"));
+            await _sendEndpointProvider.Send(stockNotReseredEvent);
             //stock islemleri basarisiz
             //order api uyarıcak event fırlatılacak
         }
